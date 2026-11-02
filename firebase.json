@@ -1,0 +1,8 @@
+{
+  "firestore": [
+    {
+      "database": "ai-studio-weeklyexpensetra-0f120340-fa9f-44e9-9b6d-b7dd50f92f26",
+      "rules": "firestore.rules"
+    }
+  ]
+}

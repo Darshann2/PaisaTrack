@@ -1,0 +1,186 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Catch-All Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Validation functions
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['uid', 'email']) &&
+        data.keys().hasOnly(['uid', 'email', 'displayName', 'photoURL', 'createdAt', 'updatedAt']) &&
+        data.uid is string && data.uid.size() <= 128 && data.uid == request.auth.uid &&
+        data.email is string && data.email.size() <= 256;
+    }
+
+    function isValidTransaction(data) {
+      return data.keys().hasAll(['id', 'type', 'amount', 'description', 'category', 'date', 'paymentMethod', 'accountId']) &&
+        data.keys().hasOnly(['id', 'type', 'amount', 'description', 'category', 'subcategory', 'date', 'time', 'paymentMethod', 'accountId', 'toAccountId', 'merchant', 'notes', 'tags', 'receiptUrl', 'createdAt', 'currency', 'reportingAmount', 'exchangeRate', 'exchangeRateSource', 'exchangeRateDate', 'isHistoricalRateLocked', 'needsReview', 'fromAmount', 'toAmount', 'fromCurrency', 'toCurrency', 'transferExchangeRate', 'transferFee', 'transferFeeCurrency']) &&
+        data.id is string && data.id.size() <= 128 &&
+        (data.type == 'Income' || data.type == 'Expense' || data.type == 'Transfer') &&
+        data.amount is number && data.amount > 0 &&
+        data.description is string && data.description.size() > 0 && data.description.size() <= 500 &&
+        data.category is string && data.category.size() <= 128 &&
+        data.date is string && data.date.matches('^\\d{4}-\\d{2}-\\d{2}$') &&
+        data.paymentMethod is string && data.paymentMethod.size() <= 64 &&
+        data.accountId is string && data.accountId.size() <= 128;
+    }
+
+    function isValidAccount(data) {
+      return data.keys().hasAll(['id', 'name', 'type', 'balance']) &&
+        data.keys().hasOnly(['id', 'name', 'type', 'balance', 'accountNumber', 'color', 'isDefault', 'currency', 'notes']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 128 &&
+        (data.type == 'Bank Account' || data.type == 'Savings' || data.type == 'Current' || data.type == 'Cash' || data.type == 'Credit Card' || data.type == 'UPI Wallet') &&
+        data.balance is number;
+    }
+
+    function isValidBudget(data) {
+      return data.keys().hasAll(['id', 'category', 'period', 'amount', 'alertThreshold']) &&
+        data.keys().hasOnly(['id', 'category', 'period', 'amount', 'alertThreshold', 'allowRollover', 'currency']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.category is string && data.category.size() <= 128 &&
+        (data.period == 'Weekly' || data.period == 'Monthly') &&
+        data.amount is number && data.amount > 0 &&
+        data.alertThreshold is number && data.alertThreshold >= 0 && data.alertThreshold <= 100;
+    }
+
+    function isValidGoal(data) {
+      return data.keys().hasAll(['id', 'name', 'targetAmount', 'currentAmount', 'deadline']) &&
+        data.keys().hasOnly(['id', 'name', 'targetAmount', 'currentAmount', 'deadline', 'category', 'color', 'isArchived', 'notes', 'currency']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 128 &&
+        data.targetAmount is number && data.targetAmount > 0 &&
+        data.currentAmount is number && data.currentAmount >= 0 &&
+        data.deadline is string && data.deadline.matches('^\\d{4}-\\d{2}-\\d{2}$');
+    }
+
+    function isValidRecurring(data) {
+      return data.keys().hasAll(['id', 'title', 'amount', 'type', 'category', 'frequency', 'nextDueDate', 'paymentMethod', 'accountId', 'isActive']) &&
+        data.keys().hasOnly(['id', 'title', 'amount', 'type', 'category', 'frequency', 'nextDueDate', 'paymentMethod', 'accountId', 'isActive', 'autoLog', 'lastLoggedDate', 'currency']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.title is string && data.title.size() > 0 && data.title.size() <= 128 &&
+        data.amount is number && data.amount > 0 &&
+        (data.type == 'Expense' || data.type == 'Income') &&
+        data.category is string && data.category.size() <= 128 &&
+        (data.frequency == 'Daily' || data.frequency == 'Weekly' || data.frequency == 'Monthly' || data.frequency == 'Yearly') &&
+        data.nextDueDate is string && data.nextDueDate.matches('^\\d{4}-\\d{2}-\\d{2}$') &&
+        data.paymentMethod is string && data.paymentMethod.size() <= 64 &&
+        data.accountId is string && data.accountId.size() <= 128 &&
+        data.isActive is bool;
+    }
+
+    function isValidCategory(data) {
+      return data.keys().hasAll(['id', 'name', 'type']) &&
+        data.keys().hasOnly(['id', 'name', 'type', 'color', 'isCustom']) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.name is string && data.name.size() > 0 && data.name.size() <= 128 &&
+        (data.type == 'Expense' || data.type == 'Income' || data.type == 'Both');
+    }
+
+    function isValidSettings(data) {
+      return data.keys().hasAll(['currency', 'currencySymbol', 'locale', 'theme']) &&
+        data.keys().hasOnly(['currency', 'currencySymbol', 'reportingCurrency', 'preferredDisplayCurrency', 'locale', 'theme', 'weekStartsOn', 'defaultPeriod', 'budgetWarningThreshold', 'fiscalYearStartMonth', 'favoriteCurrencies', 'recentCurrencies', 'ratesLastUpdated', 'disambiguateSymbols', 'autoConvert']) &&
+        data.currency is string && data.currency.size() <= 10 &&
+        data.currencySymbol is string && data.currencySymbol.size() <= 10 &&
+        data.locale is string && data.locale.size() <= 15 &&
+        (data.theme == 'light' || data.theme == 'dark' || data.theme == 'system');
+    }
+
+    // --- User Scope Fortress ---
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false; // Users can never list the entire users collection
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming());
+      allow update: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming());
+      allow delete: if isOwner(userId);
+
+      // Private User Subcollections
+      match /transactions/{txId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(txId) && isValidTransaction(incoming());
+        allow update: if isOwner(userId) && isValidId(txId) && isValidTransaction(incoming());
+        allow delete: if isOwner(userId);
+      }
+
+      match /accounts/{accId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(accId) && isValidAccount(incoming());
+        allow update: if isOwner(userId) && isValidId(accId) && isValidAccount(incoming());
+        allow delete: if isOwner(userId);
+      }
+
+      match /budgets/{budgetId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(budgetId) && isValidBudget(incoming());
+        allow update: if isOwner(userId) && isValidId(budgetId) && isValidBudget(incoming());
+        allow delete: if isOwner(userId);
+      }
+
+      match /goals/{goalId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(goalId) && isValidGoal(incoming());
+        allow update: if isOwner(userId) && isValidId(goalId) && isValidGoal(incoming());
+        allow delete: if isOwner(userId);
+      }
+
+      match /recurring/{recId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(recId) && isValidRecurring(incoming());
+        allow update: if isOwner(userId) && isValidId(recId) && isValidRecurring(incoming());
+        allow delete: if isOwner(userId);
+      }
+
+      match /categories/{catId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(catId) && isValidCategory(incoming());
+        allow update: if isOwner(userId) && isValidId(catId) && isValidCategory(incoming());
+        allow delete: if isOwner(userId);
+      }
+
+      match /settings/{settingsId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(settingsId) && isValidSettings(incoming());
+        allow update: if isOwner(userId) && isValidId(settingsId) && isValidSettings(incoming());
+        allow delete: if isOwner(userId);
+      }
+
+      match /net_worth/{docId} {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidId(docId);
+        allow update: if isOwner(userId) && isValidId(docId);
+        allow delete: if isOwner(userId);
+      }
+    }
+  }
+}

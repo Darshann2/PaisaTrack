@@ -1,0 +1,6 @@
+{
+  "name": "Expense Tracker (INR)",
+  "description": "A simple, clean, and fully functional Expense Tracker with Indian Rupee (₹) formatting, weekly tracking, and visual analytics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

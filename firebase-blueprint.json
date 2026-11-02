@@ -1,0 +1,211 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "email": { "type": "string", "maxLength": 256 },
+        "displayName": { "type": "string", "maxLength": 128 },
+        "photoURL": { "type": "string", "maxLength": 1024 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["uid", "email"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Financial transaction record with multi-currency support",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "type": { "type": "string", "enum": ["Income", "Expense", "Transfer"] },
+        "amount": { "type": "number" },
+        "currency": { "type": "string", "maxLength": 10 },
+        "reportingAmount": { "type": "number" },
+        "exchangeRate": { "type": "number" },
+        "exchangeRateSource": { "type": "string", "maxLength": 128 },
+        "exchangeRateDate": { "type": "string" },
+        "isHistoricalRateLocked": { "type": "boolean" },
+        "needsReview": { "type": "boolean" },
+        "fromAmount": { "type": "number" },
+        "toAmount": { "type": "number" },
+        "fromCurrency": { "type": "string", "maxLength": 10 },
+        "toCurrency": { "type": "string", "maxLength": 10 },
+        "transferExchangeRate": { "type": "number" },
+        "transferFee": { "type": "number" },
+        "transferFeeCurrency": { "type": "string", "maxLength": 10 },
+        "description": { "type": "string", "maxLength": 500 },
+        "category": { "type": "string", "maxLength": 128 },
+        "subcategory": { "type": "string", "maxLength": 128 },
+        "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "time": { "type": "string", "maxLength": 10 },
+        "paymentMethod": { "type": "string", "maxLength": 64 },
+        "accountId": { "type": "string", "maxLength": 128 },
+        "toAccountId": { "type": "string", "maxLength": 128 },
+        "merchant": { "type": "string", "maxLength": 200 },
+        "notes": { "type": "string", "maxLength": 1000 },
+        "tags": { "type": "array" },
+        "receiptUrl": { "type": "string", "maxLength": 2048 },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "type", "amount", "description", "category", "date", "paymentMethod", "accountId"]
+    },
+    "Account": {
+      "title": "Account",
+      "description": "User bank account, cash, wallet or credit card",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 128 },
+        "type": { "type": "string", "enum": ["Bank Account", "Savings", "Current", "Cash", "Credit Card", "UPI Wallet"] },
+        "currency": { "type": "string", "maxLength": 10 },
+        "balance": { "type": "number" },
+        "accountNumber": { "type": "string", "maxLength": 32 },
+        "color": { "type": "string", "maxLength": 32 },
+        "isDefault": { "type": "boolean" },
+        "notes": { "type": "string", "maxLength": 500 }
+      },
+      "required": ["id", "name", "type", "balance"]
+    },
+    "Budget": {
+      "title": "Budget",
+      "description": "Spending limit with alert threshold",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "category": { "type": "string", "maxLength": 128 },
+        "period": { "type": "string", "enum": ["Weekly", "Monthly"] },
+        "amount": { "type": "number" },
+        "currency": { "type": "string", "maxLength": 10 },
+        "alertThreshold": { "type": "number" },
+        "allowRollover": { "type": "boolean" }
+      },
+      "required": ["id", "category", "period", "amount", "alertThreshold"]
+    },
+    "SavingsGoal": {
+      "title": "SavingsGoal",
+      "description": "User target savings milestone",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 128 },
+        "targetAmount": { "type": "number" },
+        "currentAmount": { "type": "number" },
+        "currency": { "type": "string", "maxLength": 10 },
+        "deadline": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "category": { "type": "string", "maxLength": 128 },
+        "color": { "type": "string", "maxLength": 32 },
+        "isArchived": { "type": "boolean" },
+        "notes": { "type": "string", "maxLength": 1000 }
+      },
+      "required": ["id", "name", "targetAmount", "currentAmount", "deadline"]
+    },
+    "RecurringBill": {
+      "title": "RecurringBill",
+      "description": "Recurring bill or scheduled payment",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 128 },
+        "amount": { "type": "number" },
+        "currency": { "type": "string", "maxLength": 10 },
+        "type": { "type": "string", "enum": ["Expense", "Income"] },
+        "category": { "type": "string", "maxLength": 128 },
+        "frequency": { "type": "string", "enum": ["Daily", "Weekly", "Monthly", "Yearly"] },
+        "nextDueDate": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+        "paymentMethod": { "type": "string", "maxLength": 64 },
+        "accountId": { "type": "string", "maxLength": 128 },
+        "isActive": { "type": "boolean" },
+        "autoLog": { "type": "boolean" },
+        "lastLoggedDate": { "type": "string" }
+      },
+      "required": ["id", "title", "amount", "type", "category", "frequency", "nextDueDate", "paymentMethod", "accountId", "isActive"]
+    },
+    "CategoryItem": {
+      "title": "CategoryItem",
+      "description": "Expense or income category definition",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 128 },
+        "type": { "type": "string", "enum": ["Expense", "Income", "Both"] },
+        "color": { "type": "string", "maxLength": 32 },
+        "isCustom": { "type": "boolean" }
+      },
+      "required": ["id", "name", "type"]
+    },
+    "UserSettings": {
+      "title": "UserSettings",
+      "description": "User preferences and system configuration",
+      "type": "object",
+      "properties": {
+        "currency": { "type": "string", "maxLength": 10 },
+        "currencySymbol": { "type": "string", "maxLength": 10 },
+        "reportingCurrency": { "type": "string", "maxLength": 10 },
+        "preferredDisplayCurrency": { "type": "string", "maxLength": 10 },
+        "locale": { "type": "string", "maxLength": 15 },
+        "theme": { "type": "string", "enum": ["light", "dark", "system"] },
+        "weekStartsOn": { "type": "string", "enum": ["Monday", "Sunday"] },
+        "defaultPeriod": { "type": "string", "maxLength": 32 },
+        "budgetWarningThreshold": { "type": "number" },
+        "fiscalYearStartMonth": { "type": "number" },
+        "favoriteCurrencies": { "type": "array" },
+        "recentCurrencies": { "type": "array" },
+        "disambiguateSymbols": { "type": "boolean" },
+        "autoConvert": { "type": "boolean" },
+        "ratesLastUpdated": { "type": "number" }
+      },
+      "required": ["currency", "currencySymbol", "locale", "theme"]
+    },
+    "NetWorthProfile": {
+      "title": "NetWorthProfile",
+      "description": "User extra asset portfolio and liabilities",
+      "type": "object",
+      "properties": {
+        "otherAssets": { "type": "array" },
+        "otherLiabilities": { "type": "array" },
+        "updatedAt": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile document"
+    },
+    "/users/{userId}/transactions/{transactionId}": {
+      "schema": "Transaction",
+      "description": "Private transaction ledger of the authenticated user"
+    },
+    "/users/{userId}/accounts/{accountId}": {
+      "schema": "Account",
+      "description": "User accounts and cards"
+    },
+    "/users/{userId}/budgets/{budgetId}": {
+      "schema": "Budget",
+      "description": "User spending limits and thresholds"
+    },
+    "/users/{userId}/goals/{goalId}": {
+      "schema": "SavingsGoal",
+      "description": "User savings milestones"
+    },
+    "/users/{userId}/recurring/{recurringId}": {
+      "schema": "RecurringBill",
+      "description": "User recurring payments"
+    },
+    "/users/{userId}/categories/{categoryId}": {
+      "schema": "CategoryItem",
+      "description": "User custom categories"
+    },
+    "/users/{userId}/settings/{settingsId}": {
+      "schema": "UserSettings",
+      "description": "User personal preferences"
+    },
+    "/users/{userId}/net_worth/{docId}": {
+      "schema": "NetWorthProfile",
+      "description": "User net worth portfolio configuration"
+    }
+  }
+}
